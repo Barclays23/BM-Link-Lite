@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import ShortenUrlForm from '../components/urls/ShortenUrlForm';
 import UrlList from '../components/urls/UrlList';
@@ -9,30 +9,40 @@ import type { ShortUrlData } from '../types/url.types';
 
 
 
-
 export default function DashboardPage() {
   const [urls, setUrls] = useState<ShortUrlData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const fetchUrls = useCallback(async () => {
-    setError('');
+  useEffect(() => {
+    let isMounted = true;
 
-    try {
-      const data = await urlsService.getMyUrls();
-      setUrls(data);
-    } catch (err) {
-      setError(getErrorMessage(err, 'Could not load your URLs.'));
-    } finally {
-      setIsLoading(false);
+    async function loadUrls(): Promise<void> {
+      try {
+        const data = await urlsService.getMyUrls();
+        if (isMounted) {
+          setUrls(data);
+          setError('');
+        }
+      } catch (err: unknown) {
+        if (isMounted) {
+          setError(getErrorMessage(err, 'Could not load your URLs.'));
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
     }
+
+    void loadUrls();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  useEffect(() => {
-    void fetchUrls();
-  }, [fetchUrls]);
-
-  const handleCreated = (createdUrl: ShortUrlData) => {
+  const handleCreated = (createdUrl: ShortUrlData): void => {
     setUrls((currentUrls) => [
       createdUrl,
       ...currentUrls.filter((url) => url.id !== createdUrl.id),

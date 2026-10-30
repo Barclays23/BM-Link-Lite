@@ -105,7 +105,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
          setUser(result.user);
 
       } catch (error) {
-         throw new Error(getErrorMessage(error, 'Login failed.'));
+         throw new Error(getErrorMessage(error, 'Login failed.'), {
+            cause: error,
+         });
       }
    }, []);
 
@@ -115,9 +117,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
          await authService.register(data);
       } catch (error) {
-         throw new Error(
-         getErrorMessage(error, 'Registration failed.'),
-         );
+         throw new Error(getErrorMessage(error, 'Registration failed.'), {
+            cause: error,
+         });
       }
    }, []);
 
@@ -126,7 +128,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
          await authService.logout();
       } catch {
-         
+         // Ignored: silent cleanup/refresh failure
       } finally {
          clearSession();
       }
@@ -151,6 +153,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth(): AuthContextValue {
    const context = useContext(AuthContext);
 

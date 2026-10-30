@@ -1,5 +1,4 @@
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 
@@ -11,27 +10,11 @@ import {
 
 import { useAuth } from '../../contexts/AuthContext';
 import { getErrorMessage } from '../../utils/getErrorMessage';
+import { loginSchema, type LoginFormData } from '../../schema/login.schema';
 
 
 
 
-const loginSchema = z.object({
-  email: z
-    .string()
-    .trim()
-    .min(1, 'Email address is required.')
-    .email('Please enter a valid email address.')
-    .max(50, 'Email must not exceed 50 characters.'),
-
-  password: z
-    .string()
-    .min(1, 'Password is required.')
-    .max(20, 'Password must not exceed 20 characters.'),
-});
-
-
-
-type LoginFormData = z.infer<typeof loginSchema>;
 
 interface LoginLocationState {
   from?: {
