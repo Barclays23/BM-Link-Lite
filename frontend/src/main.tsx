@@ -15,7 +15,7 @@ createRoot(document.getElementById('root')!).render(
       <AuthProvider>
         <App />
         <Toaster
-          position="top-right"
+          position="top-center"
           richColors
           closeButton
         />
