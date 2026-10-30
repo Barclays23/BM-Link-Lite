@@ -44,6 +44,13 @@ export class UsersService {
             .exec();
     }
 
+    async findAuthUserById(userId: string): Promise<UserDocument | null> {
+        return this._userModel
+            .findById(userId)
+            .select('name email tokenVersion')
+            .exec();
+    }
+
     // Create a new user and save it in MongoDB.
     async createUser(
         createUserDto: CreateUserDto,
@@ -81,5 +88,23 @@ export class UsersService {
             name: savedUser.name,
             email: savedUser.email
         };
+    }
+
+
+    async rotateTokenVersion(userId: string, expectedVersion: number): Promise<number | null> {
+        const user = await this._userModel.findOneAndUpdate(
+            {
+                _id: userId,
+                tokenVersion: expectedVersion,
+            },
+            {
+                $inc: { tokenVersion: 1 },
+            },
+            {
+                returnDocument: 'after',
+            },
+        ).exec();
+
+        return user ? user.tokenVersion : null;
     }
 }

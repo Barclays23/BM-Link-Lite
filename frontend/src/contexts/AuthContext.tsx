@@ -14,6 +14,7 @@ import type {
   LoginData,
   RegisterData,
 } from '../types/auth.types';
+import { AUTH_SESSION_EXPIRED_EVENT, clearAuthSession, saveAuthSession } from '../api/axios';
 
 
 
@@ -34,9 +35,16 @@ const AuthContext = createContext<AuthContextValue | undefined>(
 );
 
 
+const USER_KEY = 'auth_user';
+
 export function AuthProvider({ children }: { children: ReactNode }) {
    const [user, setUser] = useState<AuthUser | null>(null);
    const [isLoading, setIsLoading] = useState(true);
+
+   const clearSession = useCallback(() => {
+      clearAuthSession();
+      setUser(null);
+   }, []);
 
    // Restore the session after a browser refresh.
    useEffect(() => {
@@ -51,41 +59,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
          try {
             const currentUser = await authService.getCurrentUser();
             setUser(currentUser);
+
+            localStorage.setItem(USER_KEY, JSON.stringify(currentUser));
+
          } catch {
-            localStorage.removeItem('access_token');
-            setUser(null);
+            clearSession();
+
          } finally {
             setIsLoading(false);
          }
       };
 
       void restoreSession();
-   }, []);
+   }, [clearSession]);
+
+
+
+   useEffect(() => {
+      const handleSessionExpired = () => {
+         clearSession();
+      };
+
+      window.addEventListener(
+         AUTH_SESSION_EXPIRED_EVENT,
+         handleSessionExpired,
+      );
+
+      return () => {
+         window.removeEventListener(
+            AUTH_SESSION_EXPIRED_EVENT,
+            handleSessionExpired,
+         );
+      };
+   }, [clearSession]);
+
+
+
 
    const login = useCallback(async (data: LoginData) => {
       try {
          const result = await authService.login(data);
 
-         const token =
-            result.access_token ??
-            result.accessToken ??
-            result.token;
+         saveAuthSession(result.accessToken, result.user);
 
-         if (!token) {
-         throw new Error(
-            'The login response does not contain a supported JWT field.',
-         );
-         }
+         setUser(result.user);
 
-         localStorage.setItem('access_token', token);
-
-         // Confirm the token works and get the user's details.
-         const currentUser = await authService.getCurrentUser();
-         setUser(currentUser);
       } catch (error) {
-         localStorage.removeItem('access_token');
-         setUser(null);
-
          throw new Error(getErrorMessage(error, 'Login failed.'));
       }
    }, []);
@@ -107,12 +126,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
          await authService.logout();
       } catch {
-         // Clear the local session even if the API call fails.
+         
       } finally {
-         localStorage.removeItem('access_token');
-         setUser(null);
+         clearSession();
       }
-   }, []);
+   }, [clearSession]);
 
 
 

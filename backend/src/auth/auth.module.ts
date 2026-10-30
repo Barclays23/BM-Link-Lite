@@ -23,17 +23,7 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
       defaultStrategy: 'jwt',
     }),
 
-    // Configures JWT signing and verification.
-    // The secret comes from .env through ConfigService.
-    JwtModule.registerAsync({
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        secret: configService.getOrThrow<string>('JWT_SECRET'),
-        signOptions: {
-          expiresIn: '15m',
-        },
-      }),
-    }),
+    JwtModule.register({}),
   ],
 
   controllers: [
@@ -46,7 +36,6 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
     JwtAuthGuard,
   ],
 
-  // Other modules, such as UrlsModule, can reuse this guard.
   exports: [
     JwtAuthGuard,
   ],

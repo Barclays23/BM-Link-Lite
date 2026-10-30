@@ -1,4 +1,8 @@
-import { useState, type FormEvent } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { toast } from 'sonner';
+
 import {
   Link,
   useLocation,
@@ -9,6 +13,24 @@ import { useAuth } from '../../contexts/AuthContext';
 import { getErrorMessage } from '../../utils/getErrorMessage';
 
 
+
+
+const loginSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .email('Please enter a valid email address.')
+    .max(50, 'Email must not exceed 50 characters.'),
+
+  password: z
+    .string()
+    .min(1, 'Password is required.')
+    .max(20, 'Password must not exceed 20 characters.'),
+});
+
+
+
+type LoginFormData = z.infer<typeof loginSchema>;
 
 interface LoginLocationState {
   from?: {
@@ -22,61 +44,81 @@ interface LoginLocationState {
 
 export default function LoginForm() {
   const { login } = useAuth();
+
   const navigate = useNavigate();
   const location = useLocation();
 
   const state = location.state as LoginLocationState | null;
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+  });
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setError('');
-    setIsSubmitting(true);
-
+  const onSubmit = async (data: LoginFormData) => {
     try {
-      await login({ email: email.trim(), password });
+      await login(data);
+
+      toast.success('Login successful');
 
       navigate(state?.from?.pathname || '/dashboard', {
         replace: true,
       });
-    } catch (err) {
-      setError(getErrorMessage(err, 'Login failed.'));
-    } finally {
-      setIsSubmitting(false);
+    } catch (error) {
+      toast.error(
+        getErrorMessage(error, 'Login failed.'),
+      );
     }
   };
 
   return (
-    <form className="form" onSubmit={handleSubmit}>
+    <form
+      className="form"
+      onSubmit={handleSubmit(onSubmit)}
+      noValidate
+    >
       {state?.message && (
-        <div className="alert alert-success">{state.message}</div>
+        <div className="alert alert-success">
+          {state.message}
+        </div>
       )}
 
-      {error && <div className="alert alert-error">{error}</div>}
+      <label htmlFor="login-email">
+        Email address
+      </label>
 
-      <label htmlFor="login-email">Email address</label>
       <input
         id="login-email"
         type="email"
-        value={email}
-        onChange={(event) => setEmail(event.target.value)}
         autoComplete="email"
-        required
+        {...register('email')}
       />
 
-      <label htmlFor="login-password">Password</label>
+      {errors.email && (
+        <p className="field-error">
+          {errors.email.message}
+        </p>
+      )}
+
+      <label htmlFor="login-password">
+        Password
+      </label>
+
       <input
         id="login-password"
         type="password"
-        value={password}
-        onChange={(event) => setPassword(event.target.value)}
         autoComplete="current-password"
-        required
+        {...register('password')}
       />
+
+      {errors.password && (
+        <p className="field-error">
+          {errors.password.message}
+        </p>
+      )}
 
       <button
         className="button button-primary button-full"
@@ -87,7 +129,8 @@ export default function LoginForm() {
       </button>
 
       <p className="auth-footer">
-        Don't have an account? <Link to="/register">Create one</Link>
+        Don't have an account?{' '}
+        <Link to="/register">Create one</Link>
       </p>
     </form>
   );

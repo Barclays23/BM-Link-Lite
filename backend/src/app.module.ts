@@ -21,7 +21,9 @@ import Joi from 'joi';
         PORT: Joi.number().default(3000),
         MONGODB_URI: Joi.string().required(),
         JWT_SECRET: Joi.string().min(32).required(),
-        JWT_EXPIRES_IN: Joi.string().default('15m'),
+        JWT_REFRESH_SECRET: Joi.string().min(32).required(),
+        JWT_ACCESS_EXPIRES_IN: Joi.string().default('15m'),
+        JWT_REFRESH_EXPIRES_IN: Joi.string().default('10h'),
         FRONTEND_URL: Joi.string().required(),
         SHORT_URL_BASE: Joi.string().uri().required(),
         NODE_ENV: Joi.string()

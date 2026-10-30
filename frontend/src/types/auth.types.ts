@@ -1,7 +1,7 @@
 export interface AuthUser {
   userId: string;
   email: string;
-  name?: string;
+  name: string;
 }
 
 export interface RegisterData {
@@ -15,9 +15,7 @@ export interface LoginData {
   password: string;
 }
 
-// Accommodates common token field names returned by login APIs.
-export interface LoginResponse {
-  access_token?: string;
-  accessToken?: string;
-  token?: string;
+export interface AuthResponse {
+  accessToken: string;
+  user: AuthUser;
 }
