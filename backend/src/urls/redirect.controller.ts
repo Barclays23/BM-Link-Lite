@@ -11,19 +11,18 @@ import { UrlsService } from './urls.service.js';
 
 
 
-@Controller() // No controller prefix.
+@Controller('r')
 export class RedirectController {
     constructor(
-        private readonly urlsService: UrlsService,
+        private readonly _urlsService: UrlsService,
     ) {}
 
-    // GET /:code
+    // GET /r/:code
     // This route is public. It does not use JwtAuthGuard.
     @Get(':code')
     @Redirect()
     async redirect(@Param('code') code: string) {
-        // Look up the short code and get its original URL.
-        const originalUrl: string = await this.urlsService.getOriginalUrl(code);
+        const originalUrl: string = await this._urlsService.getOriginalUrl(code);
 
         // NestJS responds with an HTTP redirect (302 by default).
         return {

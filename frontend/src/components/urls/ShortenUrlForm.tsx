@@ -59,7 +59,7 @@ export default function ShortenUrlForm({
 
   const onSubmit = async (data: ShortenUrlFormData) => {
     try {
-      const createdUrl = await urlsService.create(data);
+      const createdUrl = await urlsService.createURL(data);
 
       onCreated(createdUrl);
       reset();

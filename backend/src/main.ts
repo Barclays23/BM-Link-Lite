@@ -18,11 +18,12 @@ async function bootstrap() {
 
   app.use(cookieParser());
 
-  // Apply /api to all routes except public short URL redirects.
+  
+  // Apply /api to all routes except public short URL redirects and health check
   app.setGlobalPrefix('api', {
     exclude: [
       { 
-        path: ':code',
+        path: 'r/:code',
         method: RequestMethod.GET 
       },
       {

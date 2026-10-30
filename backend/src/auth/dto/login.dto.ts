@@ -7,7 +7,7 @@ import {
 
 export class LoginDto {
     @IsEmail()
-    @MaxLength(50)
+    @MaxLength(100)
     email!: string;
 
     @IsString()

@@ -1,4 +1,4 @@
-import api from '../api/axios';
+import axiosApi from '../api/axios';
 import type { CreateUrlData, ShortUrlData } from '../types/url.types';
 
 
@@ -6,14 +6,14 @@ import type { CreateUrlData, ShortUrlData } from '../types/url.types';
 
 
 export const urlsService = {
-    async create(data: CreateUrlData): Promise<ShortUrlData> {
-        const response = await api.post<ShortUrlData>('/urls', data);
+    async createURL(data: CreateUrlData): Promise<ShortUrlData> {
+        const response = await axiosApi.post<ShortUrlData>('/urls', data);
         return response.data;
     },
 
-    
+
     async getMyUrls(): Promise<ShortUrlData[]> {
-        const response = await api.get<ShortUrlData[]>('/urls');
+        const response = await axiosApi.get<ShortUrlData[]>('/urls');
         return response.data;
     },
 };
