@@ -12,124 +12,126 @@ import { registerSchema, type RegisterFormData } from '../../schema/register.sch
 
 
 export default function RegisterForm() {
-  const { register: registerUser } = useAuth();
+    const { register: registerUser } = useAuth();
 
-  const navigate = useNavigate();
+    const navigate = useNavigate();
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<RegisterFormData>({
-    resolver: zodResolver(registerSchema),
-  });
+    const {
+        register,
+        handleSubmit,
+        formState: { errors, isSubmitting },
+    } = useForm<RegisterFormData>({
+        resolver: zodResolver(registerSchema),
+    });
 
-  const onSubmit = async (data: RegisterFormData) => {
-    try {
-      await registerUser(data);
+    const onSubmit = async (data: RegisterFormData) => {
+        try {
+            const { confirmPassword: _, ...registerPayload } = data;
 
-      toast.success('Registration successful');
+            await registerUser(registerPayload);
 
-      navigate('/login', {
-        replace: true,
-        state: {
-          message: 'Registration successful. Please log in.',
-        },
-      });
-    } catch (error) {
-      toast.error(
-        getErrorMessage(error, 'Registration failed.'),
-      );
-    }
-  };
+            toast.success('Registration successful');
 
-  return (
-    <form
-      className="form"
-      onSubmit={handleSubmit(onSubmit)}
-      noValidate
-    >
-      <label htmlFor="register-name">
-        Full name
-      </label>
+            navigate('/login', {
+                replace: true,
+                state: {
+                message: 'Registration successful. Please log in.',
+                },
+            });
+        } catch (error) {
+            toast.error(
+                getErrorMessage(error, 'Registration failed.'),
+            );
+        }
+    };
 
-      <input
-        id="register-name"
-        autoComplete="name"
-        {...register('name')}
-      />
+    return (
+        <form
+            className="form"
+            onSubmit={handleSubmit(onSubmit)}
+            noValidate
+        >
+            <label htmlFor="register-name">
+                Full name
+            </label>
 
-      {errors.name && (
-        <p className="field-error">
-          {errors.name.message}
-        </p>
-      )}
+            <input
+                id="register-name"
+                autoComplete="name"
+                {...register('name')}
+            />
 
-      <label htmlFor="register-email">
-        Email address
-      </label>
+            {errors.name && (
+                <p className="field-error">
+                    {errors.name.message}
+                </p>
+            )}
 
-      <input
-        id="register-email"
-        type="email"
-        autoComplete="email"
-        {...register('email')}
-      />
+            <label htmlFor="register-email">
+                Email address
+            </label>
 
-      {errors.email && (
-        <p className="field-error">
-          {errors.email.message}
-        </p>
-      )}
+            <input
+                id="register-email"
+                type="email"
+                autoComplete="email"
+                {...register('email')}
+            />
 
-      <label htmlFor="register-password">
-        Password
-      </label>
+            {errors.email && (
+                <p className="field-error">
+                    {errors.email.message}
+                </p>
+            )}
 
-      <input
-        id="register-password"
-        type="password"
-        autoComplete="new-password"
-        {...register('password')}
-      />
+            <label htmlFor="register-password">
+                Password
+            </label>
 
-      {errors.password && (
-        <p className="field-error">
-          {errors.password.message}
-        </p>
-      )}
+            <input
+                id="register-password"
+                type="password"
+                autoComplete="new-password"
+                {...register('password')}
+            />
 
-      <label htmlFor="register-confirm-password">
-        Confirm Password
-        </label>
+            {errors.password && (
+                <p className="field-error">
+                    {errors.password.message}
+                </p>
+            )}
 
-        <input
-            id="register-confirm-password"
-            type="password"
-            autoComplete="new-password"
-            {...register('confirmPassword')}
-        />
+            <label htmlFor="register-confirm-password">
+                Confirm Password
+                </label>
 
-        {errors.confirmPassword && (
-            <p className="field-error">
-                {errors.confirmPassword.message}
+                <input
+                    id="register-confirm-password"
+                    type="password"
+                    autoComplete="new-password"
+                    {...register('confirmPassword')}
+                />
+
+                {errors.confirmPassword && (
+                    <p className="field-error">
+                        {errors.confirmPassword.message}
+                    </p>
+                )}
+
+            <button
+                className="button button-primary button-full"
+                disabled={isSubmitting}
+                type="submit"
+            >
+                {isSubmitting
+                ? 'Creating account...'
+                : 'Create account'}
+            </button>
+
+            <p className="auth-footer">
+                Already have an account?{' '}
+                <Link to="/login">Log in</Link>
             </p>
-        )}
-
-      <button
-        className="button button-primary button-full"
-        disabled={isSubmitting}
-        type="submit"
-      >
-        {isSubmitting
-          ? 'Creating account...'
-          : 'Create account'}
-      </button>
-
-      <p className="auth-footer">
-        Already have an account?{' '}
-        <Link to="/login">Log in</Link>
-      </p>
-    </form>
-  );
+        </form>
+    );
 }

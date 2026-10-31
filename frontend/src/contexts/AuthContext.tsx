@@ -10,7 +10,9 @@ import {
 import { authService } from '../services/auth.service';
 import { getErrorMessage } from '../utils/getErrorMessage';
 import type {
+   AuthResponse,
   AuthUser,
+  CurrentUserResponse,
   LoginData,
   RegisterData,
 } from '../types/auth.types';
@@ -50,6 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    useEffect(() => {
       const restoreSession = async () => {
          const token = localStorage.getItem('access_token');
+         console.log('token :', token);
 
          if (!token) {
             setIsLoading(false);
@@ -57,10 +60,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
          }
 
          try {
-            const currentUser = await authService.getCurrentUser();
-            setUser(currentUser);
+            const response: CurrentUserResponse = await authService.getCurrentUser();
+            setUser(response.user);
 
-            localStorage.setItem(USER_KEY, JSON.stringify(currentUser));
+            localStorage.setItem(USER_KEY, JSON.stringify(response.user));
 
          } catch {
             clearSession();
@@ -98,7 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
    const login = useCallback(async (data: LoginData) => {
       try {
-         const result = await authService.login(data);
+         const result: AuthResponse = await authService.login(data);
 
          saveAuthSession(result.accessToken, result.user);
 

@@ -19,3 +19,8 @@ export interface AuthResponse {
   accessToken: string;
   user: AuthUser;
 }
+
+
+export interface CurrentUserResponse {
+  user: AuthUser;
+}

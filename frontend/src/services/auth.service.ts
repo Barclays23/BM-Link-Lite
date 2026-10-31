@@ -1,7 +1,7 @@
 import axiosApi from '../api/axios';
 import type {
     AuthResponse,
-    AuthUser,
+    CurrentUserResponse,
     LoginData,
     RegisterData,
 } from '../types/auth.types';
@@ -26,8 +26,8 @@ export const authService = {
         return response.data;
     },
 
-    async getCurrentUser(): Promise<AuthUser> {
-        const response = await axiosApi.get<AuthUser>('/auth/me');
+    async getCurrentUser(): Promise<CurrentUserResponse> {
+        const response = await axiosApi.get<CurrentUserResponse>('/auth/me');
         return response.data;
     },
 

@@ -7,6 +7,7 @@ import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
 import NotFoundPage from './pages/NotFoundPage';
 import ProtectedRoute from './components/guards/ProtectedRoute';
+import PublicOnlyRoute from './components/guards/PublicOnlyRoute';
 
 
 
@@ -18,8 +19,10 @@ export default function App() {
          <Routes>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-            <Route path="/register" element={<RegisterPage />} />
-            <Route path="/login" element={<LoginPage />} />
+            <Route element={<PublicOnlyRoute />}>
+               <Route path="/register" element={<RegisterPage />} />
+               <Route path="/login" element={<LoginPage />} />
+            </Route>
 
             <Route element={<ProtectedRoute />}>
                <Route path="/dashboard" element={<DashboardPage />} />
