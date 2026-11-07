@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { ShortUrlData } from '../../types/url.types';
+import ConfirmModal from '../ui/ConfirmModal';
 
 
 
@@ -27,6 +28,8 @@ export default function UrlListItem({ url, onDelete }: UrlListItemProps) {
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showConfirmDeleteModal, setShowConfirmDeleteModal] = useState(false)
+
 
   const handleCopy = async () => {
     setCopied(false);
@@ -42,15 +45,11 @@ export default function UrlListItem({ url, onDelete }: UrlListItemProps) {
 
 
   const handleDelete = async () => {
-    const confirmed = window.confirm(
-      'Are you sure you want to delete this short URL?',
-    );
-
-    if (!confirmed) return;
-
     try {
       setIsDeleting(true);
       await onDelete(url.id);
+      setShowConfirmDeleteModal(false);
+
     } finally {
       setIsDeleting(false);
     }
@@ -120,11 +119,24 @@ export default function UrlListItem({ url, onDelete }: UrlListItemProps) {
       <button
         className="button button-danger"
         type="button"
-        disabled={isDeleting}
-        onClick={() => void handleDelete()}
+        onClick={() => setShowConfirmDeleteModal(true)}
       >
-        {isDeleting ? 'Deleting...' : 'Delete'}
+        Delete
       </button>
+
+
+      {showConfirmDeleteModal && (
+        <ConfirmModal
+          title="Delete this short URL?"
+          message="Are you sure you want to delete this short URL? This action cannot be undone."
+          confirmText="Yes, delete"
+          cancelText="Cancel"
+          isLoading={isDeleting}
+          onConfirm={() => void handleDelete()}
+          onCancel={() => setShowConfirmDeleteModal(false)}
+        />
+      )}
+
     </article>
   );
 }
