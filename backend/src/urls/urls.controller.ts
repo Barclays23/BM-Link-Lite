@@ -1,8 +1,11 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  Param,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -12,10 +15,10 @@ import type { Request } from 'express';
 import { UrlsService } from './urls.service.js';
 import { CreateUrlDto } from './dto/create-url.dto.js';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
+import { GetUrlsQueryDto } from './dto/get-urls.dto.js';
 
 
 
-// Shape of request.user populated by JwtStrategy.validate().
 interface AuthenticatedRequest extends Request {
   user: {
     userId: string;
@@ -27,7 +30,7 @@ interface AuthenticatedRequest extends Request {
 
 
 @Controller('urls')
-@UseGuards(JwtAuthGuard) // Protect every endpoint in this controller.
+@UseGuards(JwtAuthGuard)
 export class UrlsController {
     constructor(
         private readonly _urlsService: UrlsService,
@@ -49,9 +52,26 @@ export class UrlsController {
     @Get()
     async getUserUrls(
         @Req() request: AuthenticatedRequest,
+        @Query() query: GetUrlsQueryDto,
     ) {
         return this._urlsService.getUserUrls(
             request.user.userId,
+            query,
         );
     }
+
+
+    // DELETE /api/urls/:id
+    @Delete(':id')
+    async deleteUrl(
+        @Param('id') urlId: string,
+        @Req() request: AuthenticatedRequest,
+    ) {
+        return this._urlsService.deleteUrl(
+            urlId,
+            request.user.userId,
+        );
+    }
+
+
 }

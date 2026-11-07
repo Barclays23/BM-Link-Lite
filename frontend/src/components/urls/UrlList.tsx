@@ -1,12 +1,18 @@
 import type { ShortUrlData } from '../../types/url.types';
 import UrlListItem from './UrlListItem';
 
+
+
+
 interface UrlListProps {
   urls: ShortUrlData[];
   isLoading: boolean;
+  onDelete: (urlId: string) => Promise<void>;
 }
 
-export default function UrlList({ urls, isLoading }: UrlListProps) {
+
+
+export default function UrlList({ urls, isLoading, onDelete }: UrlListProps) {
   if (isLoading) {
     return <div className="panel empty-state">Loading your links...</div>;
   }
@@ -23,7 +29,11 @@ export default function UrlList({ urls, isLoading }: UrlListProps) {
   return (
     <div className="url-list">
       {urls.map((url) => (
-        <UrlListItem key={url.id} url={url} />
+        <UrlListItem 
+          key={url.id} 
+          url={url}
+          onDelete={onDelete}
+        />
       ))}
     </div>
   );

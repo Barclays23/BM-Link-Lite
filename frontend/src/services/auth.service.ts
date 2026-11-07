@@ -34,5 +34,5 @@ export const authService = {
     async logout(): Promise<void> {
         const response = await axiosApi.post('/auth/logout');
         return response.data;
-    },
+    },  
 };

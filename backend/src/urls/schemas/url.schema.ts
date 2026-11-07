@@ -41,4 +41,11 @@ export class ShortUrl {
     updatedAt!: Date;
 }
 
+
 export const ShortUrlSchema = SchemaFactory.createForClass(ShortUrl);
+
+
+ShortUrlSchema.index(
+  { userId: 1, originalUrl: 1 },
+  { unique: true },
+);
