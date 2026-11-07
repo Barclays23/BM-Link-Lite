@@ -1,9 +1,13 @@
 import { useState } from 'react';
 import type { ShortUrlData } from '../../types/url.types';
 
+
+
 interface UrlListItemProps {
   url: ShortUrlData;
+  onDelete: (urlId: string) => Promise<void>;
 }
+
 
 const iconProps = {
   width: 16,
@@ -17,9 +21,12 @@ const iconProps = {
   'aria-hidden': true,
 };
 
-export default function UrlListItem({ url }: UrlListItemProps) {
+
+
+export default function UrlListItem({ url, onDelete }: UrlListItemProps) {
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleCopy = async () => {
     setCopied(false);
@@ -32,6 +39,24 @@ export default function UrlListItem({ url }: UrlListItemProps) {
       setCopyError('Copy failed. Please copy the link manually.');
     }
   };
+
+
+  const handleDelete = async () => {
+    const confirmed = window.confirm(
+      'Are you sure you want to delete this short URL?',
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setIsDeleting(true);
+      await onDelete(url.id);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+
 
   return (
     <article className="panel url-card">
@@ -90,6 +115,15 @@ export default function UrlListItem({ url }: UrlListItemProps) {
           </svg>
         )}
         {copied ? 'Copied!' : 'Copy link'}
+      </button>
+
+      <button
+        className="button button-danger"
+        type="button"
+        disabled={isDeleting}
+        onClick={() => void handleDelete()}
+      >
+        {isDeleting ? 'Deleting...' : 'Delete'}
       </button>
     </article>
   );

@@ -1,4 +1,5 @@
 import {
+    ConflictException,
     Injectable,
     NotFoundException,
     ServiceUnavailableException,
@@ -11,38 +12,36 @@ import { randomBytes } from 'node:crypto';
 import { ShortUrl } from './schemas/url.schema.js';
 import { CreateUrlDto } from './dto/create-url.dto.js';
 import { ConfigService } from '@nestjs/config';
-
-
+import { GetUrlsQueryDto } from './dto/get-urls.dto.js';
 
 
 
 @Injectable()
 export class UrlsService {
     constructor(
-        // Inject the Mongoose URL model registered in UrlsModule.
         @InjectModel(ShortUrl.name)
         private readonly urlModel: Model<ShortUrl>,
-
-        // Used to construct the complete short URL.
         private readonly _configService: ConfigService,
     ) {}
 
-    // Generate a URL-safe random code.
-    private generateShortCode(): string {
-        return randomBytes(6).toString('base64url');
-    }
 
-    // Create a shortened URL for the authenticated user.
     async createUrl(createUrlDto: CreateUrlDto, userId: string) {
-        // The user ID comes from the verified JWT, not the request body.
         const ownerId = new Types.ObjectId(userId);
 
-        // Retry if an exceptionally rare code collision occurs.
+        const existingUrl = await this.urlModel.findOne({
+            originalUrl: createUrlDto.originalUrl,
+            userId: ownerId,
+        }).exec();
+
+        if (existingUrl) {
+            throw new ConflictException('You have already shortened this URL.');
+        }
+
         for (let attempt = 0; attempt < 5; attempt++) {
             const shortCode = this.generateShortCode();
 
             try {
-                const savedUrl = await this.urlModel.create({
+                const savedUrlDoc = await this.urlModel.create({
                     originalUrl: createUrlDto.originalUrl,
                     shortCode,
                     userId: ownerId,
@@ -55,16 +54,15 @@ export class UrlsService {
                     .replace(/\/+$/, '');
 
                 return {
-                    id: savedUrl._id.toString(),
-                    originalUrl: savedUrl.originalUrl,
-                    shortCode: savedUrl.shortCode,
-                    shortUrl: `${baseUrl}/${savedUrl.shortCode}`,
-                    clickCount: savedUrl.clickCount,
-                    createdAt: savedUrl.createdAt,
+                    id: savedUrlDoc._id.toString(),
+                    originalUrl: savedUrlDoc.originalUrl,
+                    shortCode: savedUrlDoc.shortCode,
+                    shortUrl: `${baseUrl}/${savedUrlDoc.shortCode}`,
+                    clickCount: savedUrlDoc.clickCount,
+                    createdAt: savedUrlDoc.createdAt,
                 };
 
             } catch (error: unknown) {
-                // MongoDB error code 11000 means a unique index conflict.
                 const duplicateKey =
                     typeof error === 'object' &&
                     error !== null &&
@@ -72,33 +70,82 @@ export class UrlsService {
                     error.code === 11000;
 
                 if (duplicateKey) {
-                    // Retry if the short code collided with an existing code.
                     continue;
                 }
 
-                // Let unexpected database errors propagate normally.
                 throw error;
             }
         }
 
-        // Very unlikely, but don't loop indefinitely.
         throw new ServiceUnavailableException(
             'Could not generate a unique short code. Please try again.',
         );
     }
 
-    // Return only the URLs belonging to this user.
-    async getUserUrls(userId: string) {
-        const urls = await this.urlModel
-            .find({ userId: new Types.ObjectId(userId) })
+
+    async deleteUrl(urlId: string, userId: string) {
+        if (!Types.ObjectId.isValid(urlId)) {
+            throw new NotFoundException('Short URL not found');
+        }
+
+        const deletedUrl = await this.urlModel.findOneAndDelete({
+            _id: new Types.ObjectId(urlId),
+            userId: new Types.ObjectId(userId),
+        }).exec();
+
+        if (!deletedUrl) {
+            throw new NotFoundException('Short URL not found');
+        }
+
+        return {
+            message: 'Short URL deleted successfully',
+        };
+    }
+
+    
+    async getUserUrls(userId: string, query: GetUrlsQueryDto) {
+        const page = query.page ?? 1;
+        const limit = query.limit ?? 5;
+        const search = query.search?.trim() ?? '';
+        const skip = (page - 1) * limit;
+
+        const filter = {
+            userId: new Types.ObjectId(userId),
+        };
+
+        if (search) {
+            // Escape special regex characters supplied by the user.
+            const escapedSearch = search.replace(
+                /[.*+?^${}()|[\]\\]/g,
+                '\\$&',
+            );
+
+            Object.assign(filter, {
+                $or: [
+                    { originalUrl: { $regex: escapedSearch, $options: 'i' } },
+                    { shortCode: { $regex: escapedSearch, $options: 'i' } },
+                ],
+            });
+        }
+
+        const [urls, total] = await Promise.all([
+            this.urlModel
+            .find(filter)
             .sort({ createdAt: -1 })
-            .exec();
+            .skip(skip)
+            .limit(limit)
+            .exec(),
+
+            this.urlModel.countDocuments(filter).exec(),
+        ]);
+
 
         const baseUrl = this._configService
             .getOrThrow<string>('SHORT_URL_BASE')
             .replace(/\/+$/, '');
 
-        return urls.map((url) => ({
+
+        const data = urls.map((url) => ({
             id: url._id.toString(),
             originalUrl: url.originalUrl,
             shortCode: url.shortCode,
@@ -106,9 +153,17 @@ export class UrlsService {
             clickCount: url.clickCount,
             createdAt: url.createdAt,
         }));
+
+        return {
+            data,
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit),
+        };
     }
 
-    // Find the original URL and increment its redirect count.
+    
     async getOriginalUrl(shortCode: string): Promise<string> {
         const url = await this.urlModel.findOneAndUpdate(
             { shortCode },
@@ -122,5 +177,10 @@ export class UrlsService {
         }
 
         return url.originalUrl;
+    }
+
+
+    private generateShortCode(): string {
+        return randomBytes(6).toString('base64url');
     }
 }
